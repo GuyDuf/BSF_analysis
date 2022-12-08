@@ -14,9 +14,14 @@ package.check <- lapply(packages, function(x) {
 })
 print("Package loaded!")
 
+args <- ""
+args <- commandArgs(trailingOnly = TRUE)
 
-results <- read.csv("/home/guyllaume/Desktop/OptiFly/Résultat/expérience1.csv",header = TRUE)[1:10,1:9]
-
+if(length(args) != 0){
+  results <- read.csv(args,header = TRUE)
+} else { 
+results <- read.csv("./data/exemple_historique.csv",header = TRUE)
+  }
 
 # Function to fill up empty stage
 fill_date <- function(x){
@@ -28,7 +33,6 @@ fill_date <- function(x){
 
 # Filling up the empty stage
 filled_results <- as.data.frame(t(apply(results, MARGIN = 1, FUN = function(x) fill_date(x))))
-filled_results[is.na(filled_results)] <- Sys.Date()
 
 
 # Converting date column to date
@@ -36,6 +40,7 @@ for(i in 2:(ncol(filled_results)-1)){
   filled_results[,i] = as.Date(filled_results[,i], format = "%Y-%m-%d")
 }
 
+filled_results[is.na(filled_results)] <- Sys.Date()
 
 # calculating time difference between stages
 temps <- data.frame(preponte = as.numeric(filled_results[,3]-filled_results[,2]),
@@ -61,8 +66,7 @@ colorFill <- c("adulte"   = viridis(6)[1],
 
 
 # Generating the graph
-plt <- ggplot(data = filled_results, aes(y=fl))
-plt +
+plt <- ggplot(data = filled_results, aes(y=fl)) +
   geom_bar(aes(x=factor(couple,level = unique(couple)),
                y=jour,
                fill = factor(etat,
@@ -90,4 +94,6 @@ plt +
   coord_flip() +
   annotate("text", x=filled_results[filled_results$elim == TRUE,]$couple, y=5,
            label= "bold(Retiré)", parse = TRUE, col="darkred", size=7)
-  
+pdf(file = "out.pdf", width = 15, height = 10)
+  print(plt)
+dev.off()
