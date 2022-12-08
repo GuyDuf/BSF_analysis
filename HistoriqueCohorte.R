@@ -1,3 +1,5 @@
+
+# Loading packages
 packages <- c("ggplot2", "viridis")
 
 package.check <- lapply(packages, function(x) {
@@ -10,12 +12,13 @@ package.check <- lapply(packages, function(x) {
     library(x, character.only = TRUE, warn.conflicts = FALSE, quietly = TRUE)
   }
 })
-print("Package loaded succesfully!")
+print("Package loaded!")
 
 
 results <- read.csv("/home/guyllaume/Desktop/OptiFly/Résultat/expérience1.csv",header = TRUE)[1:10,1:9]
 
 
+# Function to fill up empty stage
 fill_date <- function(x){
   if(x[length(x)]=="TRUE"){
     x[is.na(x)] <- x[length(x)-1]
@@ -23,13 +26,18 @@ fill_date <- function(x){
     return(x)
 }
 
+# Filling up the empty stage
 filled_results <- as.data.frame(t(apply(results, MARGIN = 1, FUN = function(x) fill_date(x))))
+filled_results[is.na(filled_results)] <- Sys.Date()
 
+
+# Converting date column to date
 for(i in 2:(ncol(filled_results)-1)){
   filled_results[,i] = as.Date(filled_results[,i], format = "%Y-%m-%d")
 }
 
-filled_results[is.na(filled_results)] <- Sys.Date()
+
+# calculating time difference between stages
 temps <- data.frame(preponte = as.numeric(filled_results[,3]-filled_results[,2]),
            oeuf = as.numeric(filled_results[,4]-filled_results[,3]),
            neonate = as.numeric(filled_results[,5]-filled_results[,4]),
@@ -41,6 +49,7 @@ temps <- data.frame(preponte = as.numeric(filled_results[,3]-filled_results[,2])
 filled_results <- cbind(filled_results[,1],temps,filled_results[9])
 colnames(filled_results) <- c("couple",colnames(temps),"elim")
 
+# converting to tall data frame
 filled_results <- tidyr::gather(data = filled_results,key = "etat", value = "jour",2:7)
 
 colorFill <- c("adulte"   = viridis(6)[1],
@@ -51,7 +60,7 @@ colorFill <- c("adulte"   = viridis(6)[1],
                "preponte" = viridis(6)[6])
 
 
-
+# Generating the graph
 plt <- ggplot(data = filled_results, aes(y=fl))
 plt +
   geom_bar(aes(x=factor(couple,level = unique(couple)),
